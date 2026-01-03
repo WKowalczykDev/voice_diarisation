@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Audio / model dumps (duże binaria)
+*.wav
+*.mp3
+*.flac
+*.pkl
+*.h5
+*.pt
+*.pth
+*.onnx
+pretrained_models/
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs
+*.log
