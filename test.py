@@ -102,8 +102,8 @@ def main():
     # Utwórz recorder
     recorder = AudioRecorder(
         device_id=4,
-        samplerate=48000,
-        target_samplerate=16000,
+        samplerate=16000,  # To urządzenie działa tylko z 16kHz
+        target_samplerate=16000,  # Nie trzeba resample
         chunk_duration=1.5,  # 1.5s chunki dla lepszej jakości
         output_dir="chunks"
     )
