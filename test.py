@@ -5,11 +5,6 @@ from record import AudioRecorder
 from threading import Thread
 from queue import Empty
 
-# === KONFIGURACJA ===
-
-# Dodaj nowe osoby do bazy (odkomentuj gdy potrzebne)
-# db.add("Wojtek", model.get_embedding("twoja_osoba.wav"))
-# db.add("Ola", model.get_embedding("ola.wav"))
 
 THRESHOLD = 0.25  # próg rozpoznania
 DEBOUNCE_COUNT = 2  # ile kolejnych chunków musi pasować
