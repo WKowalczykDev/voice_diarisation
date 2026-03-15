@@ -43,7 +43,7 @@ out/
 *.pt
 *.pth
 *.onnx
-pretrained_models/
+#pretrained_models/
 
 # OS
 Thumbs.db
