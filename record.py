@@ -10,7 +10,7 @@ from threading import Thread
 class AudioRecorder:
     """Klasa do nagrywania i dzielenia audio na chunki"""
 
-    def __init__(self, device_id=4, samplerate=48000, target_samplerate=16000,
+    def __init__(self, device_id=None, samplerate=48000, target_samplerate=16000,
                  chunk_duration=1.0, output_dir="chunks"):
         self.device_id = device_id
         self.samplerate = samplerate
@@ -24,13 +24,17 @@ class AudioRecorder:
         self.is_recording = False
 
         os.makedirs(output_dir, exist_ok=True)
-        sd.default.device = [device_id, sd.default.device[1]]
+        if device_id is not None:
+            sd.default.device = [device_id, sd.default.device[1]]
 
     def _callback(self, indata, frames, time_info, status):
         """Callback do zbierania audio"""
         if status:
             print(f"⚠️  {status}")
-        self.audio_buffer.append(indata[:, 0].copy())
+        # Bierzemy tylko pierwszy kanał, żeby uniknąć problemów z przesunięciem fazy
+        # między mikrofonami (co może niszczyć rozpoznawanie mowy)
+        mono_data = indata[:, 0]
+        self.audio_buffer.append(mono_data.copy())
 
     def _resample(self, audio_data, original_sr, target_sr):
         """Prosty resample przez interpolację"""
@@ -88,8 +92,23 @@ class AudioRecorder:
 
     def start(self):
         """Rozpocznij nagrywanie"""
+        device_id_to_query = self.device_id if self.device_id is not None else sd.default.device[0]
+        device_info = sd.query_devices(device_id_to_query)
+        
+        # Pobieramy natywne parametry dla tego urządzenia
+        native_samplerate = int(device_info.get('default_samplerate', self.samplerate))
+        # Aktualizujemy własny samplerate, aby funkcja _process_buffer działała poprawnie
+        self.samplerate = native_samplerate
+        
+        # Spróbujemy użyć tylu kanałów ile mikrofon podaje za domyślne (np. 2 zamiast 1)
+        native_channels = int(device_info.get('max_input_channels', 1))
+        # Jeśli max to 0, awaryjnie bierzemy 1 (choć to byłby dziwny przypadek dla mikrofonu)
+        if native_channels < 1:
+            native_channels = 1
+            
         print(f"🎙️  NAGRYWANIE - chunki po {self.chunk_duration}s")
-        print(f"🎤 Urządzenie: {sd.query_devices(self.device_id)['name']}")
+        print(f"🎤 Urządzenie: {device_info['name']}")
+        print(f"⚙️  Natywne parametry wejścia: {native_samplerate} Hz, Kanały: {native_channels}")
         print(f"📁 Output: {self.output_dir}/")
         print(f"🔄 Resample: {self.samplerate} Hz → {self.target_samplerate} Hz")
         print("=" * 60)
@@ -101,12 +120,17 @@ class AudioRecorder:
         processor.start()
 
         # Start recording stream
-        self.stream = sd.InputStream(
-            samplerate=self.samplerate,
-            channels=1,
-            callback=self._callback
-        )
-        self.stream.start()
+        try:
+            self.stream = sd.InputStream(
+                samplerate=self.samplerate,
+                channels=native_channels,
+                callback=self._callback
+            )
+            self.stream.start()
+        except Exception as e:
+            print(f"❌ BŁĄD: Nie można uruchomić strumienia mikrofonu: {e}")
+            self.is_recording = False
+            return
 
         print("🔴 Nagrywam... Ctrl+C żeby zakończyć\n")
 
@@ -137,8 +161,12 @@ class AudioRecorder:
 
 def main():
     """Standalone mode - tylko nagrywanie"""
+    # Pobierz urządzenie ze zmiennej środowiskowej, domyślnie None
+    device_env = os.environ.get("AUDIO_DEVICE_ID")
+    device_id = int(device_env) if device_env and device_env.strip() else None
+
     recorder = AudioRecorder(
-        device_id=4,
+        device_id=device_id,
         samplerate=48000,
         target_samplerate=16000,
         chunk_duration=1.0,

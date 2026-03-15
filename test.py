@@ -1,15 +1,14 @@
 import time
+import os
 import db
 import model
 from record import AudioRecorder
 from threading import Thread
 from queue import Empty
 
-
 THRESHOLD = 0.25  # próg rozpoznania
 DEBOUNCE_COUNT = 2  # ile kolejnych chunków musi pasować
 MIN_ENERGY = 0.01  # minimalny poziom audio
-
 
 # === FUNKCJE ===
 
@@ -88,18 +87,22 @@ def main():
     speakers = db.get_all()
     if not speakers:
         print("⚠️  UWAGA: Baza głosów jest pusta!")
-        print("   Dodaj osoby przez: db.add('Imie', model.get_embedding('plik.wav'))")
+        print("   Uruchom komendę: ./run_docker.sh run python add_to_db.py")
+        print("   aby dodać automatycznie pliki .wav do bazy.")
         return
 
     print(f"📊 Załadowano {len(speakers)} głosów: {list(speakers.keys())}")
     print("=" * 60)
 
+    device_env = os.environ.get("AUDIO_DEVICE_ID")
+    device_id = int(device_env) if device_env and device_env.strip() else None
+
     # Utwórz recorder
     recorder = AudioRecorder(
-        device_id=4,
-        samplerate=16000,  # To urządzenie działa tylko z 16kHz
-        target_samplerate=16000,  # Nie trzeba resample
-        chunk_duration=1.5,  # 1.5s chunki dla lepszej jakości
+        device_id=device_id,
+        samplerate=48000,
+        target_samplerate=16000,
+        chunk_duration=1.5,
         output_dir="chunks"
     )
 
