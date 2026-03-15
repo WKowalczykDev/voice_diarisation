@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: inzynierka_app
+    volumes:
+      - .:/app
+      # Mapujemy socket zdefiniowany przez hosta. Używamy stałej ścieżki wewnątrz kontenera.
+      - ${PULSE_SOCKET_PATH:-/run/user/1000/pulse/native}:/tmp/pulseaudio.socket:ro
+      # Udostępniamy też lokalne ciasteczko autoryzacji pulse (często wymagane w zwykłym Linuxie)
+      - ${PULSE_COOKIE_PATH:-~/.config/pulse/cookie}:/root/.config/pulse/cookie:ro
+    environment:
+      # Wymuszamy na kliencie PulseAudio w kontenerze użycie przekazanego gniazda
+      - PULSE_SERVER=unix:/tmp/pulseaudio.socket
+      - PYTHONUNBUFFERED=1
+      # Pozwala na przekazanie wybranego urządzenia audio (np. "4") - domyślnie None
+      - AUDIO_DEVICE_ID=${AUDIO_DEVICE_ID:-}
+    devices:
+      # Zabezpieczenie ALSA (przydaje się w różnych dystrybucjach)
+      - /dev/snd:/dev/snd
+    privileged: true
+    tty: true
+    stdin_open: true

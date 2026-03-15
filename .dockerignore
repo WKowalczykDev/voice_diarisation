@@ -1,0 +1,15 @@
+.venv/
+.idea/
+__pycache__/
+.git/
+chunks/
+pretrained_models/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
